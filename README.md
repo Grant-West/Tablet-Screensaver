@@ -4,7 +4,7 @@ A lightweight wall-mounted tablet display featuring:
 - 🕐 Current time and date
 - 🌤️ Weather forecast
 - 🏈 NFL, MLB, and NHL scores
-- 📰 Sports team news (Rams & Yankees)
+- 📰 Sports team news
 - 🖼️ Rotating background images with upload capability
 
 ## Features
