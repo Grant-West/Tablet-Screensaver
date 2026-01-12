@@ -1,0 +1,19 @@
+{
+  "name": "tablet-dashboard",
+  "version": "1.0.0",
+  "description": "Wall-mounted tablet display with clock, weather, sports scores, and background image management",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "keywords": [
+    "dashboard",
+    "clock",
+    "weather",
+    "sports",
+    "display"
+  ]
+}

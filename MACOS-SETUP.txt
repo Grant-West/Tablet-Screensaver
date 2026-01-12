@@ -1,0 +1,161 @@
+===================================
+TABLET DISPLAY - MACOS SETUP GUIDE
+===================================
+
+REQUIREMENTS:
+-------------
+1. Node.js installed (download from https://nodejs.org/)
+2. All files synced via OneDrive to your Mac
+
+FIRST TIME SETUP:
+-----------------
+1. Make sure all files are synced to your Mac via OneDrive
+2. Locate this folder on your Mac:
+   ~/Library/CloudStorage/OneDrive-DukeUniversity/Documents/Personal/Tablet
+   OR: OneDrive/Documents/Personal/Tablet (depending on your OneDrive setup)
+
+3. Open Terminal and navigate to the folder:
+   cd ~/Library/CloudStorage/OneDrive-DukeUniversity/Documents/Personal/Tablet
+
+4. Make the shell scripts executable (FIRST TIME ONLY):
+   chmod +x start-tablet.sh stop-tablet.sh
+
+5. Install dependencies (if not already installed):
+   npm install
+
+DAILY USE:
+----------
+Option 1 - Using shell script (easiest):
+1. Open Terminal
+2. Navigate to the Tablet folder:
+   cd ~/Library/CloudStorage/OneDrive-DukeUniversity/Documents/Personal/Tablet
+3. Run: ./start-tablet.sh
+   - This will start the server and open the display in your browser
+   - The Terminal window will show server logs
+
+Option 2 - Using npm:
+1. Open Terminal in the Tablet folder
+2. Run: npm start
+   - Then manually open browser to http://localhost:3000
+
+Option 3 - Double-click (requires one-time setup):
+1. Create a clickable app using Automator (see DOUBLE-CLICK SETUP section)
+2. Double-click the app icon to start
+
+The display will automatically open at: http://localhost:3000
+
+To upload background images from your iPhone:
+   - Open Safari on your iPhone
+   - Go to the upload URL shown in the Terminal window
+   - Select and upload images
+
+To stop the server:
+   - Run: ./stop-tablet.sh in Terminal OR
+   - Press Ctrl+C in the Terminal window where server is running OR
+   - Run: killall node (stops all Node processes)
+
+TERMINAL COMMANDS:
+------------------
+Navigate to folder:
+  cd ~/Library/CloudStorage/OneDrive-DukeUniversity/Documents/Personal/Tablet
+
+Start server (using shell script):
+  ./start-tablet.sh
+
+Start server (using npm):
+  npm start
+
+Stop server (using shell script):
+  ./stop-tablet.sh
+
+Check if server is running:
+  ps aux | grep "node server.js" | grep -v grep
+
+Kill all Node processes manually:
+  killall node
+
+TROUBLESHOOTING:
+----------------
+- If images don't show: Make sure you're accessing http://localhost:3000 (not opening index.html directly)
+- If server won't start: Run "./stop-tablet.sh" first, then try again
+- If port 3000 is in use: Close other applications and run "./stop-tablet.sh"
+- Check the .env file has your API keys (Slack, Outlook, Weather)
+- If shell scripts won't run: Make sure you ran "chmod +x start-tablet.sh stop-tablet.sh"
+- If you get "command not found": Make sure you're in the Tablet folder (use cd command above)
+
+FILES:
+------
+- start-tablet.sh   : Shell script - starts server and opens browser
+- stop-tablet.sh    : Shell script - stops the server
+- index.html        : The display page (don't open this directly!)
+- server.js         : The Node.js server
+- .env              : Configuration file (keep this private!)
+- backgrounds/      : Folder for uploaded background images
+
+DOUBLE-CLICK SETUP (OPTIONAL):
+-------------------------------
+To create a double-clickable app to start the tablet:
+
+1. Open Automator (Applications > Automator)
+2. Create a new "Application"
+3. Search for "Run Shell Script" and drag it to the workflow
+4. Set "Shell" to "/bin/bash"
+5. Set "Pass input" to "as arguments"
+6. Paste this script:
+
+   cd ~/Library/CloudStorage/OneDrive-DukeUniversity/Documents/Personal/Tablet
+   npm start &
+   sleep 2
+   open http://localhost:3000
+
+7. Save as "Start Tablet Display" to your Desktop or Applications folder
+8. Now you can double-click this app to start the server!
+
+STARTUP ON LOGIN (OPTIONAL):
+-----------------------------
+To make this start automatically when you log in to macOS:
+
+Method 1 - Using Login Items:
+1. Open System Settings > General > Login Items
+2. Click the "+" button under "Open at Login"
+3. Navigate to and select the "Start Tablet Display" app you created above
+4. The tablet will now start automatically when you log in!
+
+Method 2 - Using a LaunchAgent (advanced):
+1. Create a plist file at:
+   ~/Library/LaunchAgents/com.tablet.display.plist
+2. Add the configuration to run the server on login
+3. Load it with: launchctl load ~/Library/LaunchAgents/com.tablet.display.plist
+
+CREATING START/STOP SCRIPTS:
+-----------------------------
+If the start-tablet.sh and stop-tablet.sh files don't exist, create them:
+
+start-tablet.sh:
+#!/bin/bash
+cd "$(dirname "$0")"
+echo "Starting Tablet Display Server..."
+node server.js &
+sleep 2
+open http://localhost:3000
+echo "Server started! Display opened in browser."
+echo "Press Ctrl+C to stop the server."
+
+stop-tablet.sh:
+#!/bin/bash
+echo "Stopping Tablet Display Server..."
+pkill -f "node server.js"
+echo "Server stopped."
+
+Then make them executable:
+chmod +x start-tablet.sh stop-tablet.sh
+
+NETWORK ACCESS:
+---------------
+To access from other devices on your network (e.g., your iPhone):
+1. Find your Mac's local IP address:
+   ifconfig | grep "inet " | grep -v 127.0.0.1
+2. On your other device, use: http://YOUR-IP-ADDRESS:3000
+   Example: http://192.168.1.100:3000
+
+NOTE: The server must be running on your Mac for this to work!

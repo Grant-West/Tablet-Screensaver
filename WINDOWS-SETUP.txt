@@ -1,0 +1,108 @@
+=====================================
+TABLET DISPLAY - WINDOWS SETUP GUIDE
+=====================================
+
+REQUIREMENTS:
+-------------
+1. Node.js installed (download from https://nodejs.org/)
+2. All files synced via OneDrive to your Windows tablet
+
+FIRST TIME SETUP:
+-----------------
+1. Make sure all files are synced to your Windows tablet via OneDrive
+2. Locate this folder on your tablet:
+   OneDrive\Documents\Personal\Tablet
+3. Right-click on "start-tablet.bat" and select "Run as Administrator" (first time only)
+4. If prompted by Windows Firewall, click "Allow access"
+
+DAILY USE:
+----------
+Option 1 - Double-click (easiest):
+1. Double-click "start-tablet.bat"
+   - This will start the server and open the display in your browser
+   - A command window will stay open (this is the server running)
+
+Option 2 - PowerShell:
+1. Open PowerShell in the Tablet folder
+2. Run: .\start-tablet.bat
+   OR
+   Run: cmd /c start-tablet.bat
+
+Option 3 - PowerShell with npm:
+1. Open PowerShell in the Tablet folder
+2. Run: npm start
+   - Then manually open browser to http://localhost:3000
+
+2. The display will automatically open at: http://localhost:3000
+
+3. To upload background images from your iPhone:
+   - Open Safari on your iPhone
+   - Go to the upload URL shown in the server window
+   - Select and upload images
+
+4. To stop the server:
+   - Double-click "stop-tablet.bat" OR
+   - Close the server command window OR
+   - Press Ctrl+C in the server window
+
+POWERSHELL COMMANDS:
+--------------------
+Navigate to folder:
+  cd "$env:OneDrive\Documents\Personal\Tablet"
+
+Start server (using batch file):
+  .\start-tablet.bat
+  OR: cmd /c start-tablet.bat
+
+Start server (using PowerShell script):
+  .\start-tablet.ps1
+
+Start server (using npm):
+  npm start
+
+Stop server (using batch file):
+  .\stop-tablet.bat
+
+Stop server (using PowerShell script):
+  .\stop-tablet.ps1
+
+Check if server is running:
+  Get-Process -Name node -ErrorAction SilentlyContinue
+
+Kill all Node processes manually:
+  Stop-Process -Name node -Force
+
+POWERSHELL EXECUTION POLICY:
+If you get an error about scripts being disabled, run this ONCE as Administrator:
+  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+TROUBLESHOOTING:
+----------------
+- If images don't show: Make sure you're accessing http://localhost:3000 (not opening index.html directly)
+- If server won't start: Run "stop-tablet.bat" first, then try again
+- If port 3000 is in use: Close other applications and run "stop-tablet.bat"
+- Check the .env file has your API keys (Slack, Outlook, Weather)
+- PowerShell execution policy: If .bat files won't run, try: cmd /c start-tablet.bat
+
+FILES:
+------
+- start-tablet.bat  : Batch script - starts server and opens browser
+- start-tablet.ps1  : PowerShell script - starts server and opens browser
+- stop-tablet.bat   : Batch script - stops the server
+- stop-tablet.ps1   : PowerShell script - stops the server
+- index.html        : The display page (don't open this directly!)
+- server.js         : The Node.js server
+- .env              : Configuration file (keep this private!)
+- backgrounds/      : Folder for uploaded background images
+
+NOTE: Use .bat files for double-clicking, or .ps1 files when running from PowerShell
+
+STARTUP ON BOOT (OPTIONAL):
+----------------------------
+To make this start automatically when Windows boots:
+1. Press Win+R, type "shell:startup", press Enter
+2. Right-click in the Startup folder, select "New > Shortcut"
+3. Browse to "start-tablet.bat" in your Tablet folder
+4. Click OK and name it "Tablet Display"
+
+Now it will start automatically when you turn on your tablet!

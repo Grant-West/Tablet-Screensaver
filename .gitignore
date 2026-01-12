@@ -1,0 +1,39 @@
+# Personal background images (IMPORTANT: Keep your photos private!)
+backgrounds/
+
+# But include the directory structure
+!backgrounds/.gitkeep
+
+# Node.js
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Environment variables (if you add them back)
+.env
+.env.local
+
+# Operating System files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Personal configuration (if you add any)
+config.local.js
+settings.local.json

@@ -1,0 +1,826 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Wall Clock</title>
+<style>
+  :root{
+    --bg:#071021;
+    --panel:rgba(14, 26, 43, 0.85);
+    --muted:#9fb2c9;
+    --accent:#dbeefd;
+  }
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--accent);font-family: "Segoe UI", Roboto, system-ui, -apple-system;}
+
+  /* Background image */
+  .bg-image {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: opacity 1s ease-in-out;
+    z-index: -1;
+  }
+  .bg-image.fade-out { opacity: 0; }
+  .bg-image.fade-in { opacity: 1; }
+
+  .grid {
+    display:grid;
+    grid-template-rows: auto auto;
+    grid-template-columns: 1fr;
+    height:100vh;
+    padding:16px;
+    box-sizing:border-box;
+    gap:12px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* TOP: time on left, rotating image on right */
+  .timeSection {
+    display:flex;
+    gap:20px;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .timeLeft {
+    display:flex;
+    flex-direction: column;
+    justify-content:center;
+  }
+  .time {
+    font-weight:700;
+    font-size:18vw;
+    letter-spacing:2px;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    line-height: 1;
+  }
+  .dateText {
+    font-size:3.5vw;
+    font-weight:400;
+    color:var(--muted);
+    margin-top:8px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  }
+
+  /* Rotating photo on right */
+  .photoRight {
+    height: 400px;
+    flex: 1;
+    border-radius: 12px;
+    overflow: hidden;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    transition: background-image 1s ease-in-out;
+  }
+
+  /* BOTTOM: two quadrants left/right */
+  .bottom {
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:18px;
+    align-items:stretch;
+  }
+
+  .tickerPanel, .weatherPanel {
+    background: var(--panel);
+    backdrop-filter: blur(10px);
+    border-radius:12px;
+    padding:20px;
+    min-height:160px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    overflow: hidden;
+  }
+
+  /* Ticker panel */
+  .tickerPanel {
+    position: relative;
+  }
+  .tickerLabel {
+    font-size:1.4vw;
+    color:var(--muted);
+    margin-bottom:12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .tickerContent {
+    position: relative;
+    height: calc(100% - 30px);
+  }
+  .tickerItem {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+  }
+  .tickerItem.active {
+    opacity: 1;
+  }
+  .tickerIcon {
+    font-size: 2.5vw;
+    margin-bottom: 8px;
+  }
+  .tickerTitle {
+    font-size: 2.2vw;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .tickerDetail {
+    font-size: 1.6vw;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .tickerMini {
+    font-size: 1.2vw;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* weather layout */
+  .weather-layout {
+    display: flex;
+    gap: 20px;
+    height: 100%;
+  }
+  .weather-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .weather-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    text-align: right;
+  }
+  .w-temp { font-size:7vw; font-weight:700; line-height: 1; }
+  .w-desc { text-transform:capitalize; color:var(--muted); font-size:2vw; margin-top: 8px; }
+
+  .hi-lo { color:var(--accent); font-size:2.2vw; font-weight: 500; }
+
+  .smallMuted { color:var(--muted); font-size:1.6vw; }
+
+  .forecastRow {
+    margin-top:8px;
+    display:flex;
+    gap:8px;
+    align-items:center;
+    overflow-x:auto;
+    padding-bottom:6px;
+    flex: 1;
+  }
+  .hour {
+    min-width:70px;
+    background:rgba(255,255,255,0.05);
+    border-radius:8px;
+    padding:8px;
+    text-align:center;
+    font-size:1.4vw;
+  }
+
+  /* Progress bar for ticker */
+  .tickerProgress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--accent);
+    opacity: 0.5;
+    transition: width 0.1s linear;
+  }
+
+  /* Sports scores grid */
+  .scoresGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .scoreRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .scoreTeam {
+    font-size: 1.6vw;
+    min-width: 100px;
+  }
+  .scoreValue {
+    font-size: 1.8vw;
+    font-weight: 600;
+    flex: 1;
+  }
+  .scoreStatus {
+    font-size: 1.3vw;
+    color: var(--muted);
+  }
+
+  /* News headlines grid */
+  .newsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .newsRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .newsTeam {
+    font-size: 1.3vw;
+    flex-shrink: 0;
+  }
+  .newsHeadline {
+    font-size: 1.2vw;
+    color: var(--accent);
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+
+  /* Night mode - dimmed */
+  body.night-mode {
+    filter: brightness(0.5);
+  }
+  body.night-mode .time {
+    filter: brightness(1.4); /* keep time readable */
+  }
+
+  /* Sleep mode - time and date only, black background */
+  body.sleep-mode {
+    background: #000;
+  }
+  body.sleep-mode .bg-image {
+    display: none;
+  }
+  body.sleep-mode .photoRight {
+    display: none;
+  }
+  body.sleep-mode .bottom {
+    display: none;
+  }
+  body.sleep-mode .timeSection {
+    justify-content: center;
+  }
+  body.sleep-mode .time {
+    font-size: 25vw;
+    filter: brightness(0.6);
+  }
+  body.sleep-mode .dateText {
+    filter: brightness(0.5);
+    font-size: 5vw;
+  }
+
+  /* responsiveness for small screens */
+  @media (max-width:700px){
+    .timeSection { flex-direction: column; }
+    .photoRight { aspect-ratio: 16 / 9; min-height: 150px; }
+    .time{ font-size:22vw; }
+    .dateText{ font-size:6vw; }
+    .w-temp{ font-size:14vw; }
+    .w-desc{ font-size:4vw; }
+    .hi-lo{ font-size:5vw; }
+    .smallMuted { font-size:4vw; }
+    .hour{ min-width:60px; font-size:3.5vw; }
+    .tickerTitle { font-size: 5vw; }
+    .tickerDetail { font-size: 4vw; }
+    .tickerLabel { font-size: 3vw; }
+    .weather-layout { flex-direction: column-reverse; }
+    .weather-right { align-items: flex-start; text-align: left; }
+  }
+</style>
+</head>
+<body>
+  <div class="bg-image" id="bg1"></div>
+  <div class="bg-image" id="bg2"></div>
+
+  <div class="grid">
+    <div class="timeSection">
+      <div class="timeLeft">
+        <div class="time" id="time">--:--</div>
+        <div class="dateText" id="dateText">Loading...</div>
+      </div>
+      <div class="photoRight" id="photoRight"></div>
+    </div>
+
+    <div class="bottom">
+      <div class="tickerPanel">
+        <div class="tickerLabel" id="tickerLabel">Loading...</div>
+        <div class="tickerContent" id="tickerContent">
+          <!-- Ticker items will be inserted here -->
+        </div>
+        <div class="tickerProgress" id="tickerProgress"></div>
+      </div>
+
+      <div class="weatherPanel">
+        <div class="weather-layout">
+          <div class="weather-left">
+            <div class="smallMuted">Today</div>
+            <div class="hi-lo" id="hiLo">H: --°  L: --°</div>
+            <div class="smallMuted" style="margin-top:12px">Forecast</div>
+            <div class="forecastRow" id="forecastRow"></div>
+          </div>
+          <div class="weather-right">
+            <div class="w-temp" id="curTemp">--°</div>
+            <div class="w-desc" id="curDesc">Loading…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ========== CONFIG ========== */
+const LATITUDE = 35.9956;      // Durham NC
+const LONGITUDE = -78.9002;
+const UNITS = "fahrenheit";    // "fahrenheit" or "celsius"
+const REFRESH_MIN = 10;        // minutes between weather refresh
+const BG_ROTATE_MIN = 5;       // minutes between background rotation
+const TICKER_SECONDS = 15;     // seconds per ticker item
+const PHOTO_ROTATE_SECONDS = 60; // seconds between photo rotation
+
+// Night mode schedule (TEMPORARILY DISABLED)
+const NIGHT_MODE_ENABLED = true;  // Set to true to re-enable
+const DIM_START = 20;          // 8 PM - start dimming
+const DIM_END = 6;             // 6 AM - stop dimming
+const SLEEP_START = 22;        // 10 PM - time-only mode
+const SLEEP_END = 7.5;         // 7:30 AM - end time-only mode
+
+// Sports teams
+const TEAMS = {
+  NFL: { name: 'Los Angeles Rams', abbr: 'LAR' },
+  MLB: { name: 'New York Yankees', abbr: 'NYY' },
+  NHL: { name: 'Pittsburgh Penguins', abbr: 'PIT' }
+};
+/* ========== END CONFIG ========== */
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/* Time and Date */
+function updateTime(){
+  const now = new Date();
+  const hours = pad2(now.getHours());
+  const mins = pad2(now.getMinutes());
+  document.getElementById('time').textContent = `${hours}:${mins}`;
+
+  const dayName = DAYS[now.getDay()];
+  const monthName = MONTHS[now.getMonth()];
+  const date = now.getDate();
+  document.getElementById('dateText').textContent = `${dayName}, ${monthName} ${date}`;
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+/* Weather code to description and emoji mapping */
+const WEATHER_CODES = {
+  0: { desc: 'Clear sky', icon: '☀️' },
+  1: { desc: 'Mainly clear', icon: '🌤️' },
+  2: { desc: 'Partly cloudy', icon: '⛅' },
+  3: { desc: 'Overcast', icon: '☁️' },
+  45: { desc: 'Foggy', icon: '🌫️' },
+  48: { desc: 'Icy fog', icon: '🌫️' },
+  51: { desc: 'Light drizzle', icon: '🌧️' },
+  53: { desc: 'Drizzle', icon: '🌧️' },
+  55: { desc: 'Heavy drizzle', icon: '🌧️' },
+  61: { desc: 'Light rain', icon: '🌧️' },
+  63: { desc: 'Rain', icon: '🌧️' },
+  65: { desc: 'Heavy rain', icon: '🌧️' },
+  66: { desc: 'Freezing rain', icon: '🌨️' },
+  67: { desc: 'Heavy freezing rain', icon: '🌨️' },
+  71: { desc: 'Light snow', icon: '🌨️' },
+  73: { desc: 'Snow', icon: '❄️' },
+  75: { desc: 'Heavy snow', icon: '❄️' },
+  80: { desc: 'Rain showers', icon: '🌦️' },
+  81: { desc: 'Moderate showers', icon: '🌦️' },
+  82: { desc: 'Heavy showers', icon: '🌧️' },
+  85: { desc: 'Snow showers', icon: '🌨️' },
+  86: { desc: 'Heavy snow showers', icon: '🌨️' },
+  95: { desc: 'Thunderstorm', icon: '⛈️' },
+  96: { desc: 'Thunderstorm w/ hail', icon: '⛈️' },
+  99: { desc: 'Severe thunderstorm', icon: '⛈️' },
+};
+
+function getWeatherInfo(code) {
+  return WEATHER_CODES[code] || { desc: 'Unknown', icon: '❓' };
+}
+
+/* Weather */
+async function fetchWeatherAndRender(){
+  const curTempEl = document.getElementById('curTemp');
+  const curDescEl = document.getElementById('curDesc');
+  const hiLoEl = document.getElementById('hiLo');
+  const forecastRow = document.getElementById('forecastRow');
+
+  try{
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${LATITUDE}&longitude=${LONGITUDE}&current=temperature_2m,weather_code&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&temperature_unit=${UNITS}&timezone=auto&forecast_days=2`;
+
+    const resp = await fetch(url);
+    if(!resp.ok) throw new Error("Weather API error");
+    const data = await resp.json();
+
+    const temp = Math.round(data.current.temperature_2m);
+    const weatherInfo = getWeatherInfo(data.current.weather_code);
+    const unit = UNITS === "fahrenheit" ? "F" : "C";
+    curTempEl.textContent = `${temp}°${unit}`;
+    curDescEl.textContent = weatherInfo.desc;
+
+    if(data.daily){
+      const hi = Math.round(data.daily.temperature_2m_max[0]);
+      const lo = Math.round(data.daily.temperature_2m_min[0]);
+      hiLoEl.textContent = `H: ${hi}°   L: ${lo}°`;
+    }
+
+    forecastRow.innerHTML = "";
+    if(data.hourly && data.hourly.time){
+      const now = new Date();
+      const startIndex = data.hourly.time.findIndex(t => new Date(t) > now);
+
+      if(startIndex !== -1 && startIndex + 4 <= data.hourly.time.length){
+        for(let i = 0; i < 4; i++){
+          const idx = startIndex + i;
+          const dt = new Date(data.hourly.time[idx]);
+          const hourLabel = `${pad2(dt.getHours())}:00`;
+          const t = Math.round(data.hourly.temperature_2m[idx]);
+          const info = getWeatherInfo(data.hourly.weather_code[idx]);
+
+          const div = document.createElement('div');
+          div.className = 'hour';
+          div.innerHTML = `
+            <div style="font-weight:600">${hourLabel}</div>
+            <div style="font-size:2em; margin:6px 0;">${info.icon}</div>
+            <div style="margin-top:4px">${t}°</div>
+          `;
+          forecastRow.appendChild(div);
+        }
+      }
+    }
+
+  }catch(err){
+    console.error(err);
+    curDescEl.textContent = "Weather error";
+  }
+}
+
+fetchWeatherAndRender();
+setInterval(fetchWeatherAndRender, REFRESH_MIN * 60 * 1000);
+
+/* ========== TICKER SYSTEM ========== */
+let tickerItems = [];
+let currentTickerIndex = 0;
+let tickerStartTime = Date.now();
+
+// Daily riddles (rotates based on day of year)
+const RIDDLES = [
+  { q: "What has hands but can't clap?", a: "A clock" },
+  { q: "What has a head and a tail but no body?", a: "A coin" },
+  { q: "What gets wetter the more it dries?", a: "A towel" },
+  { q: "What can you catch but not throw?", a: "A cold" },
+  { q: "What has keys but no locks?", a: "A piano" },
+  { q: "What goes up but never comes down?", a: "Your age" },
+  { q: "What can travel around the world while staying in a corner?", a: "A stamp" },
+  { q: "What has a neck but no head?", a: "A bottle" },
+  { q: "What is full of holes but still holds water?", a: "A sponge" },
+  { q: "What building has the most stories?", a: "A library" },
+  { q: "What can run but never walks?", a: "Water" },
+  { q: "What has teeth but cannot bite?", a: "A comb" },
+  { q: "What begins with T, ends with T, and has T in it?", a: "A teapot" },
+  { q: "What is always in front of you but can't be seen?", a: "The future" },
+  { q: "What has one eye but can't see?", a: "A needle" },
+];
+
+function getDailyRiddle() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+  const riddle = RIDDLES[dayOfYear % RIDDLES.length];
+  const hour = now.getHours();
+  // Reveal answer after 6 PM
+  const showAnswer = hour >= 18;
+  return {
+    type: 'riddle',
+    label: '🧩 Daily Riddle',
+    icon: '🤔',
+    title: riddle.q,
+    detail: showAnswer ? `Answer: ${riddle.a}` : 'Answer revealed at 6 PM',
+    mini: showAnswer ? '✓ Solved' : 'Think about it...'
+  };
+}
+
+/* Sports Scores - Combined view using ESPN unofficial API */
+async function getSportsScores() {
+  const scores = [];
+
+  // NFL - Rams
+  try {
+    const nflResp = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard');
+    const nflData = await nflResp.json();
+    const ramsGame = nflData.events?.find(e =>
+      e.competitions?.[0]?.competitors?.some(c => c.team?.abbreviation === 'LAR')
+    );
+
+    if (ramsGame) {
+      const comp = ramsGame.competitions[0];
+      const home = comp.competitors.find(c => c.homeAway === 'home');
+      const away = comp.competitors.find(c => c.homeAway === 'away');
+      const status = comp.status?.type?.shortDetail || '';
+      scores.push({ team: '🏈 Rams', score: `${away.team.abbreviation} ${away.score || 0} @ ${home.team.abbreviation} ${home.score || 0}`, status });
+    } else {
+      scores.push({ team: '🏈 Rams', score: 'No game today', status: '' });
+    }
+  } catch (e) {
+    scores.push({ team: '🏈 Rams', score: 'No data', status: '' });
+  }
+
+  // MLB - Yankees
+  try {
+    const mlbResp = await fetch('https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard');
+    const mlbData = await mlbResp.json();
+    const yankeesGame = mlbData.events?.find(e =>
+      e.competitions?.[0]?.competitors?.some(c => c.team?.abbreviation === 'NYY')
+    );
+
+    if (yankeesGame) {
+      const comp = yankeesGame.competitions[0];
+      const home = comp.competitors.find(c => c.homeAway === 'home');
+      const away = comp.competitors.find(c => c.homeAway === 'away');
+      const status = comp.status?.type?.shortDetail || '';
+      scores.push({ team: '⚾ Yankees', score: `${away.team.abbreviation} ${away.score || 0} @ ${home.team.abbreviation} ${home.score || 0}`, status });
+    } else {
+      scores.push({ team: '⚾ Yankees', score: 'No game today', status: '' });
+    }
+  } catch (e) {
+    scores.push({ team: '⚾ Yankees', score: 'No data', status: '' });
+  }
+
+  // NHL - Penguins
+  try {
+    const nhlResp = await fetch('https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard');
+    const nhlData = await nhlResp.json();
+    const pensGame = nhlData.events?.find(e =>
+      e.competitions?.[0]?.competitors?.some(c => c.team?.abbreviation === 'PIT')
+    );
+
+    if (pensGame) {
+      const comp = pensGame.competitions[0];
+      const home = comp.competitors.find(c => c.homeAway === 'home');
+      const away = comp.competitors.find(c => c.homeAway === 'away');
+      const status = comp.status?.type?.shortDetail || '';
+      scores.push({ team: '🏒 Penguins', score: `${away.team.abbreviation} ${away.score || 0} @ ${home.team.abbreviation} ${home.score || 0}`, status });
+    } else {
+      scores.push({ team: '🏒 Penguins', score: 'No game today', status: '' });
+    }
+  } catch (e) {
+    scores.push({ team: '🏒 Penguins', score: 'No data', status: '' });
+  }
+
+  return {
+    type: 'sports',
+    label: '🏆 Sports Scores',
+    scores: scores
+  };
+}
+
+/* Team News - Combined headlines using ESPN */
+async function getTeamNews() {
+  const headlines = [];
+
+  // Rams news (get 3)
+  try {
+    const resp = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/news?team=14');
+    const data = await resp.json();
+    if (data.articles) {
+      data.articles.slice(0, 3).forEach(article => {
+        headlines.push({ team: '🏈', headline: article.headline });
+      });
+    }
+  } catch (e) {
+    console.error('Rams news error:', e);
+  }
+
+  // Yankees news (get 3)
+  try {
+    const resp = await fetch('https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/news?team=10');
+    const data = await resp.json();
+    if (data.articles) {
+      data.articles.slice(0, 3).forEach(article => {
+        headlines.push({ team: '⚾', headline: article.headline });
+      });
+    }
+  } catch (e) {
+    console.error('Yankees news error:', e);
+  }
+
+  return {
+    type: 'news',
+    label: '📰 Team News',
+    headlines: headlines.slice(0, 6) // max 6 headlines
+  };
+}
+
+/* Build and render ticker items */
+async function refreshTickerData() {
+  const items = [];
+
+  // Add riddle
+  items.push(getDailyRiddle());
+
+  // Add combined sports scores
+  const sports = await getSportsScores();
+  items.push(sports);
+
+  // Add combined team news
+  const news = await getTeamNews();
+  items.push(news);
+
+  tickerItems = items;
+  renderTickerItems();
+}
+
+function renderTickerItems() {
+  const container = document.getElementById('tickerContent');
+  container.innerHTML = '';
+
+  tickerItems.forEach((item, index) => {
+    const div = document.createElement('div');
+    div.className = 'tickerItem' + (index === 0 ? ' active' : '');
+
+    if (item.type === 'riddle') {
+      div.innerHTML = `
+        <div class="tickerIcon">${item.icon}</div>
+        <div class="tickerTitle">${item.title}</div>
+        <div class="tickerDetail">${item.detail}</div>
+        <div class="tickerMini">${item.mini}</div>
+      `;
+    } else if (item.type === 'sports') {
+      const scoresHtml = item.scores.map(s =>
+        `<div class="scoreRow"><span class="scoreTeam">${s.team}</span><span class="scoreValue">${s.score}</span><span class="scoreStatus">${s.status}</span></div>`
+      ).join('');
+      div.innerHTML = `<div class="scoresGrid">${scoresHtml}</div>`;
+    } else if (item.type === 'news') {
+      const newsHtml = item.headlines.map(h =>
+        `<div class="newsRow"><span class="newsTeam">${h.team}</span><span class="newsHeadline">${h.headline}</span></div>`
+      ).join('');
+      div.innerHTML = `<div class="newsGrid">${newsHtml}</div>`;
+    }
+
+    container.appendChild(div);
+  });
+
+  currentTickerIndex = 0;
+  tickerStartTime = Date.now();
+  updateTickerLabel();
+}
+
+function updateTickerLabel() {
+  if (tickerItems.length === 0) return;
+  document.getElementById('tickerLabel').textContent = tickerItems[currentTickerIndex].label;
+}
+
+function nextTickerItem() {
+  if (tickerItems.length === 0) return;
+
+  const items = document.querySelectorAll('.tickerItem');
+  items[currentTickerIndex].classList.remove('active');
+
+  currentTickerIndex = (currentTickerIndex + 1) % tickerItems.length;
+
+  items[currentTickerIndex].classList.add('active');
+  tickerStartTime = Date.now();
+  updateTickerLabel();
+}
+
+function updateTickerProgress() {
+  const elapsed = Date.now() - tickerStartTime;
+  const progress = Math.min((elapsed / (TICKER_SECONDS * 1000)) * 100, 100);
+  document.getElementById('tickerProgress').style.width = progress + '%';
+
+  if (progress >= 100) {
+    nextTickerItem();
+  }
+}
+
+// Start ticker
+refreshTickerData();
+setInterval(refreshTickerData, 5 * 60 * 1000); // Refresh data every 5 minutes
+setInterval(updateTickerProgress, 100); // Update progress bar
+
+/* ========== Background Image Rotation ========== */
+let backgrounds = [];
+let currentBgIndex = 0;
+let activeBg = 1;
+
+async function loadBackgrounds(){
+  try {
+    const resp = await fetch('/api/backgrounds');
+    backgrounds = await resp.json();
+    if(backgrounds.length > 0){
+      showBackground(0);
+    }
+  } catch(e){
+    console.log('No backgrounds available');
+  }
+}
+
+function showBackground(index){
+  if(backgrounds.length === 0) return;
+
+  const bg1 = document.getElementById('bg1');
+  const bg2 = document.getElementById('bg2');
+  const imgUrl = `/backgrounds/${encodeURIComponent(backgrounds[index])}`;
+
+  if(activeBg === 1){
+    bg2.style.backgroundImage = `url('${imgUrl}')`;
+    bg1.classList.add('fade-out');
+    bg2.classList.remove('fade-out');
+    bg2.classList.add('fade-in');
+    activeBg = 2;
+  } else {
+    bg1.style.backgroundImage = `url('${imgUrl}')`;
+    bg2.classList.add('fade-out');
+    bg1.classList.remove('fade-out');
+    bg1.classList.add('fade-in');
+    activeBg = 1;
+  }
+}
+
+function nextBackground(){
+  if(backgrounds.length === 0) return;
+  currentBgIndex = (currentBgIndex + 1) % backgrounds.length;
+  showBackground(currentBgIndex);
+}
+
+loadBackgrounds();
+setInterval(nextBackground, BG_ROTATE_MIN * 60 * 1000);
+
+/* ========== Rotating Photo Display (Top Right) ========== */
+let photoIndex = 0;
+
+function showPhoto(index) {
+  if (backgrounds.length === 0) return;
+  const photoRight = document.getElementById('photoRight');
+  const imgUrl = `/backgrounds/${encodeURIComponent(backgrounds[index])}`;
+  photoRight.style.backgroundImage = `url('${imgUrl}')`;
+}
+
+function nextPhoto() {
+  if (backgrounds.length === 0) return;
+  photoIndex = (photoIndex + 1) % backgrounds.length;
+  showPhoto(photoIndex);
+}
+
+// Start photo rotation
+async function startPhotoRotation() {
+  await new Promise(resolve => {
+    const checkBackgrounds = setInterval(() => {
+      if (backgrounds.length > 0) {
+        clearInterval(checkBackgrounds);
+        showPhoto(0);
+        setInterval(nextPhoto, PHOTO_ROTATE_SECONDS * 1000);
+        resolve();
+      }
+    }, 100);
+  });
+}
+
+startPhotoRotation();
+
+/* ========== Night Mode ========== */
+function checkNightMode() {
+  if (!NIGHT_MODE_ENABLED) {
+    document.body.classList.remove('sleep-mode', 'night-mode');
+    return;
+  }
+
+  const now = new Date();
+  const hour = now.getHours() + now.getMinutes() / 60;
+
+  // Check if in sleep mode (time-only)
+  const inSleepMode = hour >= SLEEP_START || hour < SLEEP_END;
+
+  // Check if in dim mode (but not sleep)
+  const inDimMode = (hour >= DIM_START || hour < DIM_END) && !inSleepMode;
+
+  document.body.classList.toggle('sleep-mode', inSleepMode);
+  document.body.classList.toggle('night-mode', inDimMode);
+}
+
+// Check night mode every minute
+checkNightMode();
+setInterval(checkNightMode, 60 * 1000);
+</script>
+</body>
+</html>
