@@ -350,11 +350,11 @@ const BG_ROTATE_MIN = 5;       // minutes between background rotation
 const TICKER_SECONDS = 15;     // seconds per ticker item
 const PHOTO_ROTATE_SECONDS = 60; // seconds between photo rotation
 
-// Night mode schedule (TEMPORARILY DISABLED)
-const NIGHT_MODE_ENABLED = true;  // Set to true to re-enable
-const DIM_START = 20;          // 8 PM - start dimming
-const DIM_END = 6;             // 6 AM - stop dimming
-const SLEEP_START = 22;        // 10 PM - time-only mode
+// Night mode schedule
+const NIGHT_MODE_ENABLED = true;  // Controls sleep mode
+const DIM_START = 21;          // Not used (night mode removed)
+const DIM_END = 6;             // Not used (night mode removed)
+const SLEEP_START = 21;        // 9 PM - time-only mode
 const SLEEP_END = 7.5;         // 7:30 AM - end time-only mode
 
 // Sports teams
@@ -798,7 +798,7 @@ async function startPhotoRotation() {
 
 startPhotoRotation();
 
-/* ========== Night Mode ========== */
+/* ========== Sleep Mode ========== */
 function checkNightMode() {
   if (!NIGHT_MODE_ENABLED) {
     document.body.classList.remove('sleep-mode', 'night-mode');
@@ -811,14 +811,11 @@ function checkNightMode() {
   // Check if in sleep mode (time-only)
   const inSleepMode = hour >= SLEEP_START || hour < SLEEP_END;
 
-  // Check if in dim mode (but not sleep)
-  const inDimMode = (hour >= DIM_START || hour < DIM_END) && !inSleepMode;
-
   document.body.classList.toggle('sleep-mode', inSleepMode);
-  document.body.classList.toggle('night-mode', inDimMode);
+  document.body.classList.remove('night-mode'); // Night mode removed
 }
 
-// Check night mode every minute
+// Check sleep mode every minute
 checkNightMode();
 setInterval(checkNightMode, 60 * 1000);
 </script>
